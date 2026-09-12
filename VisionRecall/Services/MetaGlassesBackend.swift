@@ -30,6 +30,14 @@ final class MetaGlassesBackend: GlassesBackend {
         // Access Wearables lazily here — never at init — so GlassesRuntime.configure()
         // (called at app launch) always runs first.
         let wearables = Wearables.shared
+
+        // After registration the glasses can take a moment to become eligible.
+        // createSession fails with "no eligible device" until one appears in the
+        // devices stream, so wait for it (bounded) before selecting a device.
+        guard await Self.waitForDevice(timeout: .seconds(20)) else {
+            throw GlassesError.noDeviceAvailable
+        }
+
         let selector = AutoDeviceSelector(wearables: wearables)
         let session = try wearables.createSession(deviceSelector: selector)
         try session.start()
@@ -86,6 +94,24 @@ final class MetaGlassesBackend: GlassesBackend {
         capture = nil
         teardown = nil
         photoContinuation = nil
+    }
+
+    /// Resolves to `true` once at least one glasses device is available, or `false` if
+    /// none appears within `timeout`. Races the devices stream against a timer.
+    private static func waitForDevice(timeout: Duration) async -> Bool {
+        let deviceTask = Task { @MainActor () -> Bool in
+            for await devices in Wearables.shared.devicesStream() {
+                if !devices.isEmpty { return true }
+            }
+            return false
+        }
+        let timeoutTask = Task {
+            try? await Task.sleep(for: timeout)
+            deviceTask.cancel()
+        }
+        let result = await deviceTask.value
+        timeoutTask.cancel()
+        return result
     }
 }
 #endif

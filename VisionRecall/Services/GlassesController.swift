@@ -27,6 +27,7 @@ enum GlassesStatus: Equatable {
 
 enum GlassesError: LocalizedError {
     case notConnected
+    case noDeviceAvailable
     case permissionDenied
     case cameraUnavailable
     case decodeFailed
@@ -34,6 +35,7 @@ enum GlassesError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .notConnected: return "Glasses are not connected."
+        case .noDeviceAvailable: return "No glasses found. Make sure they're on and connected in the Meta AI app, then try again."
         case .permissionDenied: return "Camera permission was denied in the Meta AI app."
         case .cameraUnavailable: return "The glasses camera is unavailable."
         case .decodeFailed: return "Could not decode the captured photo."
