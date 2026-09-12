@@ -4,16 +4,18 @@
 
 VisionRecall is an iOS-first hackathon prototype for context-aware reminders using Meta AI glasses. Keep the repository organized as follows:
 
-- `VisionRecall/` for the SwiftUI app, feature modules, and local persistence.
-- `VisionRecallTests/` for unit tests and `VisionRecallUITests/` for UI tests.
-- `assets/` for static, non-code resources.
+- `ios/` for the SwiftUI app, UI tests, permissions, and dependency composition.
+- `glasses/` for the Meta Wearables Device Access Toolkit adapter and mocks.
+- `local-ml/` for on-device visual feature extraction.
+- `memory/` for local reminder and context persistence.
+- `rules/` for deterministic reminder-trigger evaluation.
 - `docs/` for architecture, setup, and product decisions.
 
 Do not commit Xcode user data, DerivedData, signing files, API keys, captured frames, or user memory data.
 
 ## Build, Test, and Development Commands
 
-Open the future Xcode project with `open VisionRecall.xcodeproj`. Build and test from Xcode, or run:
+Open the future Xcode project with `open ios/VisionRecall.xcodeproj`. Build and test from Xcode, or run:
 
 ```sh
 xcodebuild -scheme VisionRecall -destination 'platform=iOS Simulator,name=iPhone 16' test
@@ -23,7 +25,7 @@ The Meta Wearables Device Access Toolkit is a Swift Package Manager dependency. 
 
 ## Coding Style & Naming Conventions
 
-Use Swift 6 conventions, SwiftUI, and four-space indentation. Name types in `UpperCamelCase`, members in `lowerCamelCase`, and files after their primary type (for example, `ReminderRule.swift`). Prefer small feature-focused types and protocol-backed services for hardware and persistence boundaries.
+Use Swift 6 conventions, SwiftUI, and four-space indentation. Name types in `UpperCamelCase`, members in `lowerCamelCase`, and files after their primary type (for example, `ReminderRule.swift`). Prefer small feature-focused types and protocol-backed services for hardware and persistence boundaries. Follow each module's README; do not let UI, Meta SDK, or persistence types leak across module boundaries.
 
 Keep visual embeddings, captured context, and reminder state on-device. Explicitly opt out of SDK analytics and crash reporting unless the user has consented.
 
