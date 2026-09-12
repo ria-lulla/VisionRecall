@@ -54,6 +54,12 @@ struct HomeView: View {
             }
         }
         .font(.subheadline)
+        .overlay(alignment: .bottomLeading) {
+            Text("Registration: \(glasses.registrationState.rawValue)")
+                .font(.caption2)
+                .foregroundStyle(.tertiary)
+                .offset(y: 14)
+        }
     }
 
     @ViewBuilder

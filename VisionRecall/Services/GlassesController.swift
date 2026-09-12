@@ -25,6 +25,15 @@ enum GlassesStatus: Equatable {
     var isBusy: Bool { self == .connecting || self == .capturing || self == .registering }
 }
 
+/// Mirrors the SDK's RegistrationState so the UI never imports the SDK.
+enum GlassesRegistrationState: String {
+    case unknown
+    case unavailable
+    case available
+    case registering
+    case registered
+}
+
 enum GlassesError: LocalizedError {
     case notConnected
     case noDeviceAvailable
@@ -47,6 +56,8 @@ enum GlassesError: LocalizedError {
 /// (simulator/tests) and the real Meta DAT adapter (device).
 @MainActor
 protocol GlassesBackend: AnyObject {
+    /// Begin observing the SDK's registration state. Call after `Wearables.configure()`.
+    func observeRegistration(onChange: @escaping @MainActor (GlassesRegistrationState) -> Void)
     /// Launch the one-time registration flow (deep-links to the Meta AI app).
     func startRegistration() async throws
     func connect() async throws
@@ -65,11 +76,34 @@ final class GlassesController {
     private(set) var latestPhoto: UIImage?
     private(set) var lastCaptureDate: Date?
     private(set) var diagnostics: String = ""
+    private(set) var registrationState: GlassesRegistrationState = .unknown
 
     private let backend: GlassesBackend
 
     init(backend: GlassesBackend = GlassesBackendFactory.make()) {
         self.backend = backend
+    }
+
+    /// Start watching registration state. Call once, after the SDK is configured.
+    func activate() {
+        backend.observeRegistration { [weak self] state in
+            guard let self else { return }
+            self.registrationState = state
+            // Don't leave the UI stuck on "Registering…" once the SDK reports a
+            // terminal state.
+            switch state {
+            case .registered:
+                if self.status == .registering { self.status = .disconnected }
+            case .available, .unavailable:
+                if self.status == .registering {
+                    self.status = state == .unavailable
+                        ? .failed("Registration unavailable. Check the Meta AI app and your connection.")
+                        : .disconnected
+                }
+            case .registering, .unknown:
+                break
+            }
+        }
     }
 
     /// One-time: connect this app to the glasses via the Meta AI app. After returning

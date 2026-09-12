@@ -13,10 +13,9 @@ settings:
     CURRENT_PROJECT_VERSION: "1"
     # Set your Apple Developer team in Xcode (Signing & Capabilities) before device runs.
     CODE_SIGN_STYLE: Automatic
-    # DAT registration/attestation identifiers. Empty is fine in Developer Mode; fill
-    # MetaAppID/ClientToken from the Wearables Developer Center for non-dev-mode builds.
-    META_APP_ID: ""
-    CLIENT_TOKEN: ""
+    # DAT registration. "0" is the documented Developer Mode value for MetaAppID;
+    # replace with the APPLICATION_ID from the Wearables Developer Center for production.
+    META_APP_ID: "0"
 
 packages:
   MetaWearablesDAT:

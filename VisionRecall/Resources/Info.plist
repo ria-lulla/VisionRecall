@@ -43,10 +43,21 @@
         <string>_bonjour._tcp</string>
     </array>
 
-    <!-- Bluetooth LE is the baseline connection for glasses discovery and control. -->
+    <!-- Glasses connect as an external accessory over Bluetooth Classic. -->
+    <key>UISupportedExternalAccessoryProtocols</key>
+    <array>
+        <string>com.meta.ar.wearable</string>
+    </array>
     <key>UIBackgroundModes</key>
     <array>
-        <string>bluetooth-central</string>
+        <string>bluetooth-peripheral</string>
+        <string>external-accessory</string>
+    </array>
+
+    <!-- Lets the SDK detect and open the Meta AI app via canOpenURL during registration. -->
+    <key>LSApplicationQueriesSchemes</key>
+    <array>
+        <string>fb-viewapp</string>
     </array>
 
     <!-- Custom URL scheme so the Meta AI app can call back during registration. -->
@@ -64,18 +75,15 @@
         </dict>
     </array>
 
-    <!-- Device Access Toolkit configuration. MetaAppID/ClientToken are only required
-         outside Developer Mode; TeamID comes from your Xcode signing settings. -->
+    <!-- Device Access Toolkit configuration. MetaAppID is "0" for Developer Mode;
+         use the Wearables Developer Center APPLICATION_ID (plus ClientToken/TeamID
+         for attestation) for production builds. -->
     <key>MWDAT</key>
     <dict>
         <key>AppLinkURLScheme</key>
         <string>visionrecall://</string>
         <key>MetaAppID</key>
         <string>$(META_APP_ID)</string>
-        <key>ClientToken</key>
-        <string>$(CLIENT_TOKEN)</string>
-        <key>TeamID</key>
-        <string>$(DEVELOPMENT_TEAM)</string>
         <!-- Opt out of DAT telemetry to keep the prototype local-first. -->
         <key>Analytics</key>
         <dict>

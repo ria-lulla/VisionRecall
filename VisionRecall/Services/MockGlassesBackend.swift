@@ -7,6 +7,11 @@ import UIKit
 final class MockGlassesBackend: GlassesBackend {
     private var captureCount = 0
 
+    func observeRegistration(onChange: @escaping @MainActor (GlassesRegistrationState) -> Void) {
+        // The mock is always "registered" so the Simulator flow goes straight to Connect.
+        onChange(.registered)
+    }
+
     func startRegistration() async throws {
         // No registration needed for the mock; the simulator has no glasses to pair.
     }

@@ -21,6 +21,24 @@ final class MetaGlassesBackend: GlassesBackend {
     private var capture: (() -> Void)?
     private var teardown: (() -> Void)?
     private var photoContinuation: CheckedContinuation<UIImage, Error>?
+    private var registrationTask: Task<Void, Never>?
+
+    func observeRegistration(onChange: @escaping @MainActor (GlassesRegistrationState) -> Void) {
+        registrationTask?.cancel()
+        registrationTask = Task { @MainActor in
+            for await state in Wearables.shared.registrationStateStream() {
+                let mapped: GlassesRegistrationState
+                switch state {
+                case .registered: mapped = .registered
+                case .available: mapped = .available
+                case .registering: mapped = .registering
+                case .unavailable: mapped = .unavailable
+                default: mapped = .unknown
+                }
+                onChange(mapped)
+            }
+        }
+    }
 
     func startRegistration() async throws {
         try await Wearables.shared.startRegistration()

@@ -8,6 +8,9 @@ struct VisionRecallApp: App {
     @State private var glasses = GlassesController()
 
     init() {
+        // Must run before anything touches Wearables.
+        GlassesRuntime.configure()
+
         let container: ModelContainer
         do {
             container = try ModelContainer(for: MemoryKey.self, Reminder.self)
@@ -31,7 +34,7 @@ struct VisionRecallApp: App {
                 .environment(engine)
                 .environment(glasses)
                 .task {
-                    GlassesRuntime.configure()
+                    glasses.activate()
                     await NotificationService().requestAuthorization()
                 }
                 .onOpenURL { url in
