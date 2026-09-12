@@ -10,9 +10,12 @@ enum GlassesRuntime {
         #if canImport(MWDATCore) && !targetEnvironment(simulator)
         do {
             try Wearables.configure()
+            GlassesLog.info("Wearables.configure() succeeded")
         } catch {
-            assertionFailure("Failed to configure Wearables SDK: \(error)")
+            GlassesLog.error("Wearables.configure() failed: \(error)")
         }
+        #else
+        GlassesLog.info("Simulator build: DAT SDK not active")
         #endif
     }
 
@@ -20,7 +23,15 @@ enum GlassesRuntime {
     @MainActor
     static func handleCallback(_ url: URL) {
         #if canImport(MWDATCore) && !targetEnvironment(simulator)
-        Task { _ = try? await Wearables.shared.handleUrl(url) }
+        GlassesLog.info("handleCallback url=\(url.absoluteString)")
+        Task {
+            do {
+                let handled = try await Wearables.shared.handleUrl(url)
+                GlassesLog.info("handleUrl handled=\(handled)")
+            } catch {
+                GlassesLog.error("handleUrl failed: \(error)")
+            }
+        }
         #endif
     }
 }

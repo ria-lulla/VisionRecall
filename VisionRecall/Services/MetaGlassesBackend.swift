@@ -27,6 +27,7 @@ final class MetaGlassesBackend: GlassesBackend {
         registrationTask?.cancel()
         registrationTask = Task { @MainActor in
             for await state in Wearables.shared.registrationStateStream() {
+                GlassesLog.info("registrationState: \(state)")
                 let mapped: GlassesRegistrationState
                 switch state {
                 case .registered: mapped = .registered
@@ -52,22 +53,30 @@ final class MetaGlassesBackend: GlassesBackend {
         // A device is only eligible once its link state is `.connected`, so wait for a
         // connected device and select it explicitly rather than relying on
         // AutoDeviceSelector picking the right one.
+        GlassesLog.info("connect() start. \(await diagnostics())")
+
         guard let deviceId = await Self.waitForConnectedDevice(timeout: .seconds(20)) else {
-            throw GlassesError.notEligible(Self.eligibilitySummary())
+            let summary = Self.eligibilitySummary()
+            GlassesLog.error("No connected device after wait. \(summary)")
+            throw GlassesError.notEligible(summary)
         }
+        GlassesLog.info("Selected device \(deviceId)")
 
         let selector = SpecificDeviceSelector(device: deviceId)
         let session = try wearables.createSession(deviceSelector: selector)
+        GlassesLog.info("Session created; starting…")
         try session.start()
 
         // Wait until the device session is active.
         for await state in session.stateStream() {
+            GlassesLog.info("session state: \(state)")
             if state == .started { break }
             if state == .stopped { throw GlassesError.notConnected }
         }
 
         // Camera permission is confirmed through the Meta AI app.
         let permission = try await wearables.requestPermission(.camera)
+        GlassesLog.info("camera permission: \(permission)")
         guard permission == .granted else { throw GlassesError.permissionDenied }
 
         let config = StreamConfiguration(
