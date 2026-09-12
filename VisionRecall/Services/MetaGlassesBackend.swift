@@ -49,14 +49,14 @@ final class MetaGlassesBackend: GlassesBackend {
         // (called at app launch) always runs first.
         let wearables = Wearables.shared
 
-        // After registration the glasses can take a moment to become eligible.
-        // createSession fails with "no eligible device" until one appears in the
-        // devices stream, so wait for it (bounded) before selecting a device.
-        guard await Self.waitForDevice(timeout: .seconds(20)) else {
-            throw GlassesError.noDeviceAvailable
+        // A device is only eligible once its link state is `.connected`, so wait for a
+        // connected device and select it explicitly rather than relying on
+        // AutoDeviceSelector picking the right one.
+        guard let deviceId = await Self.waitForConnectedDevice(timeout: .seconds(20)) else {
+            throw GlassesError.notEligible(Self.eligibilitySummary())
         }
 
-        let selector = AutoDeviceSelector(wearables: wearables)
+        let selector = SpecificDeviceSelector(device: deviceId)
         let session = try wearables.createSession(deviceSelector: selector)
         try session.start()
 
@@ -114,50 +114,61 @@ final class MetaGlassesBackend: GlassesBackend {
         photoContinuation = nil
     }
 
-    /// Dumps what `devicesStream()` reports so we can tell "no device at all" apart from
-    /// "device known but not connected" (AutoDeviceSelector picks the first *connected*
-    /// device, so a registered-but-disconnected device is still not eligible).
+    /// Reports what the SDK currently knows: registration, each known device, its link
+    /// state and compatibility. `devices` is a synchronous property, so unlike
+    /// `devicesStream()` this always returns immediately.
     func diagnostics() async -> String {
-        let task = Task { @MainActor () -> String in
-            var lastCount = -1
-            for await devices in Wearables.shared.devicesStream() {
-                lastCount = devices.count
-                if !devices.isEmpty {
-                    let dump = devices
-                        .map { String(describing: $0) }
-                        .joined(separator: "\n---\n")
-                    return "devicesStream: \(devices.count) device(s)\n\(dump)"
-                }
+        let wearables = Wearables.shared
+        var lines = ["registration: \(wearables.registrationState)"]
+
+        let ids = wearables.devices
+        lines.append("devices: \(ids.count)")
+        for id in ids {
+            guard let device = wearables.deviceForIdentifier(id) else {
+                lines.append("- \(id): no Device object")
+                continue
             }
-            return lastCount < 0
-                ? "devicesStream: no emission before timeout"
-                : "devicesStream: emitted \(lastCount) device(s)"
+            lines.append("- \(device.nameOrId())")
+            lines.append("    type: \(device.deviceType().rawValue)")
+            lines.append("    link: \(device.linkState)")
+            lines.append("    compat: \(device.compatibility().displayString)")
         }
-        let timeout = Task {
-            try? await Task.sleep(for: .seconds(8))
-            task.cancel()
+        if ids.isEmpty {
+            lines.append("The SDK sees no glasses. Confirm they're connected in the Meta AI app.")
         }
-        let result = await task.value
-        timeout.cancel()
-        return result
+        return lines.joined(separator: "\n")
     }
 
-    /// Resolves to `true` once at least one glasses device is available, or `false` if
-    /// none appears within `timeout`. Races the devices stream against a timer.
-    private static func waitForDevice(timeout: Duration) async -> Bool {
-        let deviceTask = Task { @MainActor () -> Bool in
-            for await devices in Wearables.shared.devicesStream() {
-                if !devices.isEmpty { return true }
+    /// Explains why no device was eligible, using link state and compatibility.
+    private static func eligibilitySummary() -> String {
+        let wearables = Wearables.shared
+        let ids = wearables.devices
+        guard !ids.isEmpty else {
+            return "No glasses are known to the SDK. Make sure they're connected in the Meta AI app."
+        }
+        let details = ids.map { id -> String in
+            guard let device = wearables.deviceForIdentifier(id) else { return "\(id): unknown" }
+            return "\(device.nameOrId()) [link: \(device.linkState), compat: \(device.compatibility().displayString)]"
+        }
+        return "No connected glasses. " + details.joined(separator: "; ")
+    }
+
+    /// Polls for a device whose link state is `.connected`, up to `timeout`.
+    private static func waitForConnectedDevice(timeout: Duration) async -> DeviceIdentifier? {
+        func connectedDevice() -> DeviceIdentifier? {
+            let wearables = Wearables.shared
+            return wearables.devices.first { id in
+                wearables.deviceForIdentifier(id)?.linkState == .connected
             }
-            return false
         }
-        let timeoutTask = Task {
-            try? await Task.sleep(for: timeout)
-            deviceTask.cancel()
+
+        if let id = connectedDevice() { return id }
+        let attempts = max(1, Int(timeout / .milliseconds(500)))
+        for _ in 0..<attempts {
+            try? await Task.sleep(for: .milliseconds(500))
+            if let id = connectedDevice() { return id }
         }
-        let result = await deviceTask.value
-        timeoutTask.cancel()
-        return result
+        return nil
     }
 }
 #endif

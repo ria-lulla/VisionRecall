@@ -45,7 +45,7 @@ final class ContextEngine {
     }
 
     func startStreaming() {
-        try? capture.start()
+        capture.start()
     }
 
     func stopStreaming() {
