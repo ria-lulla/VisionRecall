@@ -22,6 +22,10 @@ final class MetaGlassesBackend: GlassesBackend {
     private var teardown: (() -> Void)?
     private var photoContinuation: CheckedContinuation<UIImage, Error>?
 
+    func startRegistration() async throws {
+        try await Wearables.shared.startRegistration()
+    }
+
     func connect() async throws {
         // Access Wearables lazily here — never at init — so GlassesRuntime.configure()
         // (called at app launch) always runs first.

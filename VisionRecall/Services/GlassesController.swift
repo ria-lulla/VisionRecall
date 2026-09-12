@@ -5,6 +5,7 @@ import Observation
 /// Connection/capture state surfaced to the UI.
 enum GlassesStatus: Equatable {
     case disconnected
+    case registering
     case connecting
     case ready
     case capturing
@@ -13,6 +14,7 @@ enum GlassesStatus: Equatable {
     var label: String {
         switch self {
         case .disconnected: return "Disconnected"
+        case .registering: return "Registering… finish in the Meta AI app"
         case .connecting: return "Connecting…"
         case .ready: return "Ready"
         case .capturing: return "Capturing…"
@@ -20,7 +22,7 @@ enum GlassesStatus: Equatable {
         }
     }
 
-    var isBusy: Bool { self == .connecting || self == .capturing }
+    var isBusy: Bool { self == .connecting || self == .capturing || self == .registering }
 }
 
 enum GlassesError: LocalizedError {
@@ -43,6 +45,8 @@ enum GlassesError: LocalizedError {
 /// (simulator/tests) and the real Meta DAT adapter (device).
 @MainActor
 protocol GlassesBackend: AnyObject {
+    /// Launch the one-time registration flow (deep-links to the Meta AI app).
+    func startRegistration() async throws
     func connect() async throws
     func capturePhoto() async throws -> UIImage
     func disconnect()
@@ -61,6 +65,17 @@ final class GlassesController {
 
     init(backend: GlassesBackend = GlassesBackendFactory.make()) {
         self.backend = backend
+    }
+
+    /// One-time: connect this app to the glasses via the Meta AI app. After returning
+    /// from the Meta AI app, tap Connect.
+    func startRegistration() async {
+        status = .registering
+        do {
+            try await backend.startRegistration()
+        } catch {
+            status = .failed(error.localizedDescription)
+        }
     }
 
     func connect() async {

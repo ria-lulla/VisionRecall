@@ -7,6 +7,10 @@ import UIKit
 final class MockGlassesBackend: GlassesBackend {
     private var captureCount = 0
 
+    func startRegistration() async throws {
+        // No registration needed for the mock; the simulator has no glasses to pair.
+    }
+
     func connect() async throws {
         try? await Task.sleep(for: .milliseconds(600))
     }

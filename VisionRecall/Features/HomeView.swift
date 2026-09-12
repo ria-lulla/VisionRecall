@@ -58,7 +58,7 @@ struct HomeView: View {
     @ViewBuilder
     private var controls: some View {
         switch glasses.status {
-        case .disconnected, .failed:
+        case .disconnected, .failed, .registering:
             Button {
                 Task { await glasses.connect() }
             } label: {
@@ -66,6 +66,20 @@ struct HomeView: View {
                     .frame(maxWidth: .infinity)
             }
             .buttonStyle(.borderedProminent)
+            .disabled(glasses.status == .registering)
+
+            Button {
+                Task { await glasses.startRegistration() }
+            } label: {
+                Label("Register glasses", systemImage: "link")
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.bordered)
+
+            Text("First time? Tap Register to link VisionRecall in the Meta AI app, then Connect.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
         default:
             Button {
                 Task { await glasses.capturePhoto() }
@@ -85,7 +99,7 @@ struct HomeView: View {
     private var statusColor: Color {
         switch glasses.status {
         case .ready: return .green
-        case .connecting, .capturing: return .orange
+        case .connecting, .capturing, .registering: return .orange
         case .failed: return .red
         case .disconnected: return .gray
         }
