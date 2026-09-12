@@ -41,8 +41,6 @@ targets:
         product: MWDATCore
       - package: MetaWearablesDAT
         product: MWDATCamera
-      - package: MetaWearablesDAT
-        product: MWDATMockDevice
 
   VisionRecallTests:
     type: bundle.unit-test

@@ -17,13 +17,15 @@ import MWDATCamera
 
 @MainActor
 final class MetaGlassesBackend: GlassesBackend {
-    private let wearables = Wearables.shared
     private var tokens: [Any] = []
     private var capture: (() -> Void)?
     private var teardown: (() -> Void)?
     private var photoContinuation: CheckedContinuation<UIImage, Error>?
 
     func connect() async throws {
+        // Access Wearables lazily here — never at init — so GlassesRuntime.configure()
+        // (called at app launch) always runs first.
+        let wearables = Wearables.shared
         let selector = AutoDeviceSelector(wearables: wearables)
         let session = try wearables.createSession(deviceSelector: selector)
         try session.start()
