@@ -34,10 +34,49 @@
     <string>VisionRecall uses your home/away location so departure reminders trigger at the right moment. Location stays on this device.</string>
     <key>NSCameraUsageDescription</key>
     <string>VisionRecall uses the glasses camera to match visual memory keys on-device. Frames are not uploaded.</string>
+    <key>NSBluetoothAlwaysUsageDescription</key>
+    <string>VisionRecall connects to your Meta glasses over Bluetooth.</string>
+    <key>NSLocalNetworkUsageDescription</key>
+    <string>VisionRecall streams photos from your Meta glasses over Wi-Fi.</string>
+    <key>NSBonjourServices</key>
+    <array>
+        <string>_bonjour._tcp</string>
+    </array>
 
-    <!-- Opt out of Device Access Toolkit telemetry to keep the prototype local-first. -->
+    <!-- Bluetooth LE is the baseline connection for glasses discovery and control. -->
+    <key>UIBackgroundModes</key>
+    <array>
+        <string>bluetooth-central</string>
+    </array>
+
+    <!-- Custom URL scheme so the Meta AI app can call back during registration. -->
+    <key>CFBundleURLTypes</key>
+    <array>
+        <dict>
+            <key>CFBundleTypeRole</key>
+            <string>Editor</string>
+            <key>CFBundleURLName</key>
+            <string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+            <key>CFBundleURLSchemes</key>
+            <array>
+                <string>visionrecall</string>
+            </array>
+        </dict>
+    </array>
+
+    <!-- Device Access Toolkit configuration. MetaAppID/ClientToken are only required
+         outside Developer Mode; TeamID comes from your Xcode signing settings. -->
     <key>MWDAT</key>
     <dict>
+        <key>AppLinkURLScheme</key>
+        <string>visionrecall://</string>
+        <key>MetaAppID</key>
+        <string>$(META_APP_ID)</string>
+        <key>ClientToken</key>
+        <string>$(CLIENT_TOKEN)</string>
+        <key>TeamID</key>
+        <string>$(DEVELOPMENT_TEAM)</string>
+        <!-- Opt out of DAT telemetry to keep the prototype local-first. -->
         <key>Analytics</key>
         <dict>
             <key>OptOut</key>

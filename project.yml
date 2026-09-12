@@ -13,6 +13,15 @@ settings:
     CURRENT_PROJECT_VERSION: "1"
     # Set your Apple Developer team in Xcode (Signing & Capabilities) before device runs.
     CODE_SIGN_STYLE: Automatic
+    # DAT registration/attestation identifiers. Empty is fine in Developer Mode; fill
+    # MetaAppID/ClientToken from the Wearables Developer Center for non-dev-mode builds.
+    META_APP_ID: ""
+    CLIENT_TOKEN: ""
+
+packages:
+  MetaWearablesDAT:
+    url: https://github.com/facebook/meta-wearables-dat-ios
+    exactVersion: "0.9.0"
 
 targets:
   VisionRecall:
@@ -27,6 +36,13 @@ targets:
         GENERATE_INFOPLIST_FILE: NO
         ENABLE_PREVIEWS: YES
         TARGETED_DEVICE_FAMILY: "1"
+    dependencies:
+      - package: MetaWearablesDAT
+        product: MWDATCore
+      - package: MetaWearablesDAT
+        product: MWDATCamera
+      - package: MetaWearablesDAT
+        product: MWDATMockDevice
 
   VisionRecallTests:
     type: bundle.unit-test

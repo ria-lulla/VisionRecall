@@ -5,6 +5,7 @@ import SwiftData
 struct VisionRecallApp: App {
     let container: ModelContainer
     @State private var engine: ContextEngine
+    @State private var glasses = GlassesController()
 
     init() {
         let container: ModelContainer
@@ -28,7 +29,14 @@ struct VisionRecallApp: App {
         WindowGroup {
             ContentView()
                 .environment(engine)
-                .task { await NotificationService().requestAuthorization() }
+                .environment(glasses)
+                .task {
+                    GlassesRuntime.configure()
+                    await NotificationService().requestAuthorization()
+                }
+                .onOpenURL { url in
+                    GlassesRuntime.handleCallback(url)
+                }
         }
         .modelContainer(container)
     }

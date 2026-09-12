@@ -14,7 +14,7 @@ import UIKit
 //   - camera.stream.statePublisher.listen { state in ... }
 //   - camera.stream.start()
 
-#if canImport(MWDATCore) && canImport(MWDATCamera)
+#if canImport(MWDATCore) && canImport(MWDATCamera) && !targetEnvironment(simulator)
 import MWDATCore
 import MWDATCamera
 
@@ -24,11 +24,11 @@ final class MetaCaptureService: CaptureService {
     var onFrame: ((CameraFrame) -> Void)?
 
     private let session: DeviceSession
-    private var stream: CameraStream?
-    private var frameToken: ListenerToken?
-    private var stateToken: ListenerToken?
+    // Listener tokens are held as `Any` to avoid naming SDK-internal token types.
+    private var tokens: [Any] = []
+    private var stopStream: (() -> Void)?
 
-    /// Inject an established `DeviceSession` (created after `Wearables.initialize` and
+    /// Inject an established `DeviceSession` (created after `Wearables.configure()` and
     /// a granted camera permission from the Meta AI app).
     init(session: DeviceSession) {
         self.session = session
@@ -43,28 +43,27 @@ final class MetaCaptureService: CaptureService {
         )
         guard let camera = try session.addCamera(config: config) else { return }
         let stream = camera.stream
-        self.stream = stream
 
-        stateToken = stream.statePublisher.listen { [weak self] state in
+        tokens.append(stream.statePublisher.listen { [weak self] state in
             Task { @MainActor in
                 self?.isStreaming = (state == .streaming)
             }
-        }
-        frameToken = stream.videoFramePublisher.listen { [weak self] frame in
+        })
+        tokens.append(stream.videoFramePublisher.listen { [weak self] frame in
             guard let image = frame.makeUIImage() else { return }
             Task { @MainActor in
                 self?.onFrame?(CameraFrame(image: image))
             }
-        }
+        })
+        stopStream = { stream.stop() }
         stream.start()
         isStreaming = true
     }
 
     func stop() {
-        stream?.stop()
-        frameToken = nil
-        stateToken = nil
-        stream = nil
+        stopStream?()
+        tokens.removeAll()
+        stopStream = nil
         isStreaming = false
     }
 }
