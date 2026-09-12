@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>CFBundleDevelopmentRegion</key>
+    <string>$(DEVELOPMENT_LANGUAGE)</string>
+    <key>CFBundleExecutable</key>
+    <string>$(EXECUTABLE_NAME)</string>
+    <key>CFBundleIdentifier</key>
+    <string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+    <key>CFBundleInfoDictionaryVersion</key>
+    <string>6.0</string>
+    <key>CFBundleName</key>
+    <string>$(PRODUCT_NAME)</string>
+    <key>CFBundleDisplayName</key>
+    <string>VisionRecall</string>
+    <key>CFBundlePackageType</key>
+    <string>$(PRODUCT_BUNDLE_PACKAGE_TYPE)</string>
+    <key>CFBundleShortVersionString</key>
+    <string>$(MARKETING_VERSION)</string>
+    <key>CFBundleVersion</key>
+    <string>$(CURRENT_PROJECT_VERSION)</string>
+    <key>LSRequiresIPhoneOS</key>
+    <true/>
+    <key>UILaunchScreen</key>
+    <dict/>
+    <key>UISupportedInterfaceOrientations</key>
+    <array>
+        <string>UIInterfaceOrientationPortrait</string>
+    </array>
+
+    <!-- Permissions used by the demo. Explain each in-app before invoking the system prompt. -->
+    <key>NSLocationWhenInUseUsageDescription</key>
+    <string>VisionRecall uses your home/away location so departure reminders trigger at the right moment. Location stays on this device.</string>
+    <key>NSCameraUsageDescription</key>
+    <string>VisionRecall uses the glasses camera to match visual memory keys on-device. Frames are not uploaded.</string>
+
+    <!-- Opt out of Device Access Toolkit telemetry to keep the prototype local-first. -->
+    <key>MWDAT</key>
+    <dict>
+        <key>Analytics</key>
+        <dict>
+            <key>OptOut</key>
+            <true/>
+        </dict>
+    </dict>
+</dict>
+</plist>
