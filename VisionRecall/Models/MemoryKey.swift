@@ -32,10 +32,12 @@ final class MemoryKey {
 
     /// Returns true if any of the detected vision labels matches this key.
     func matches(labels: [String]) -> Bool {
-        let needles = ([label] + aliases).map { $0.lowercased() }
-        let haystack = labels.map { $0.lowercased() }
+        let needles = VisionLabelMapper.labels(for: [label] + aliases, limit: .max)
+        let haystack = VisionLabelMapper.labels(for: labels, limit: .max)
         return needles.contains { needle in
-            haystack.contains { $0 == needle || $0.contains(needle) }
+            haystack.contains { candidate in
+                candidate == needle || candidate.split(separator: " ").contains(Substring(needle))
+            }
         }
     }
 }
