@@ -1,42 +1,55 @@
 import Foundation
 import Observation
+import CoreLocation
 
 /// Orchestrates the local pipeline: sampled frame → vision labels → memory-key match →
 /// combine with phone context → rule evaluation → single local alert.
 ///
-/// Location/departure are exposed as manual flags in this first prototype so the demo
-/// runs without Core Location; swap `isAtHome`/`isDepartingContext` for a
-/// `CLLocationManager`-backed provider later.
 @MainActor
 @Observable
 final class ContextEngine {
     // Signals surfaced to the UI.
     var latestLabels: [String] = []
     var matchedKeyNames: [String] = []
-    var isAtHome = true
-    var isDepartingContext = false
     var lastEventDescription: String?
 
     private let capture: MockCaptureService
     private let vision: VisionService
     private let store: MemoryStore
     private let notifier: NotificationService
+    private let location: any LocationContextProvider
     private let evaluator = RuleEvaluator()
+    private var lastMatchedKeyIDs: Set<UUID> = []
+    private var locationRevision = 0
 
     init(
         capture: MockCaptureService,
         vision: VisionService,
         store: MemoryStore,
-        notifier: NotificationService
+        notifier: NotificationService,
+        location: any LocationContextProvider
     ) {
         self.capture = capture
         self.vision = vision
         self.store = store
         self.notifier = notifier
+        self.location = location
         capture.onFrame = { [weak self] frame in
             self?.handle(frame: frame)
         }
+        location.onContextChange = { [weak self] in
+            self?.locationDidChange()
+        }
     }
+
+    var isAtHome: Bool { _ = locationRevision; return location.isAtHome }
+    var isDepartingContext: Bool { _ = locationRevision; return location.isDepartingContext }
+    var homeLocation: HomeLocation? { _ = locationRevision; return location.homeLocation }
+    var locationAuthorizationStatus: CLAuthorizationStatus { _ = locationRevision; return location.authorizationStatus }
+
+    func requestLocationAuthorization() { location.requestWhenInUseAuthorization() }
+    func setHomeToCurrentLocation() { location.setHomeToCurrentLocation() }
+    func clearHomeLocation() { location.clearHomeLocation() }
 
     var isStreaming: Bool { capture.isStreaming }
 
@@ -61,17 +74,23 @@ final class ContextEngine {
         let labels = vision.labels(for: frame)
         latestLabels = labels
         let matchedIDs = store.matchedKeyIDs(for: labels)
+        lastMatchedKeyIDs = matchedIDs
         matchedKeyNames = store.memoryKeys()
             .filter { matchedIDs.contains($0.id) }
             .map(\.name)
         evaluate(matchedKeyIDs: matchedIDs)
     }
 
+    private func locationDidChange() {
+        locationRevision += 1
+        evaluate(matchedKeyIDs: lastMatchedKeyIDs)
+    }
+
     /// Evaluate every active reminder against the current context and deliver alerts.
     func evaluate(matchedKeyIDs: Set<UUID>) {
         let snapshot = ContextSnapshot(
-            isAtHome: isAtHome,
-            isDepartingContext: isDepartingContext,
+            isAtHome: location.isAtHome,
+            isDepartingContext: location.isDepartingContext,
             matchedKeyIDs: matchedKeyIDs
         )
         for reminder in store.reminders(activeOnly: true) {

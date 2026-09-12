@@ -1,8 +1,8 @@
 import SwiftUI
 import SwiftData
 
-/// Demo surface for the mock-device flow: script what the glasses "see", toggle phone
-/// context, sample a frame, and watch the rule evaluator deliver a single alert.
+/// Demo surface for the mock-device flow: script what the glasses see, sample a frame,
+/// and watch the rule evaluator consume the phone's derived location context.
 struct LiveCaptureView: View {
     @Environment(\.modelContext) private var context
     @Environment(ContextEngine.self) private var engine
@@ -10,7 +10,6 @@ struct LiveCaptureView: View {
     @State private var scriptedLabelsText = "door, boxes"
 
     var body: some View {
-        @Bindable var engine = engine
         NavigationStack {
             Form {
                 Section("What the glasses see (mock)") {
@@ -22,9 +21,14 @@ struct LiveCaptureView: View {
                     }
                 }
 
-                Section("Phone context") {
-                    Toggle("At home", isOn: $engine.isAtHome)
-                    Toggle("Leaving / door context", isOn: $engine.isDepartingContext)
+                locationSection
+
+                Section("Reminder notifications") {
+                    Text("Allow notifications to receive a reminder when the required visual and location signals match.")
+                        .foregroundStyle(.secondary)
+                    Button("Enable notifications") {
+                        Task { await NotificationService().requestAuthorization() }
+                    }
                 }
 
                 Section("Latest observation") {
@@ -40,6 +44,32 @@ struct LiveCaptureView: View {
                 }
             }
             .navigationTitle("Live")
+        }
+    }
+
+    @ViewBuilder
+    private var locationSection: some View {
+        Section("Home location") {
+            if engine.homeLocation == nil {
+                Text("Set your current location as home to enable home and departure signals.")
+                    .foregroundStyle(.secondary)
+                Button("Enable location") {
+                    engine.requestLocationAuthorization()
+                }
+                Button("Set current location as home") {
+                    engine.setHomeToCurrentLocation()
+                }
+                .disabled(engine.locationAuthorizationStatus != .authorizedWhenInUse && engine.locationAuthorizationStatus != .authorizedAlways)
+            } else {
+                LabeledContent("Status", value: engine.isAtHome ? "At home" : "Away")
+                if engine.isDepartingContext {
+                    Label("Home exit detected", systemImage: "figure.walk.departure")
+                        .foregroundStyle(.orange)
+                }
+                Button("Clear home location", role: .destructive) {
+                    engine.clearHomeLocation()
+                }
+            }
         }
     }
 

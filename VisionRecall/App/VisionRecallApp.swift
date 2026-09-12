@@ -24,7 +24,8 @@ struct VisionRecallApp: App {
             capture: MockCaptureService(),
             vision: DefaultVisionService(),
             store: store,
-            notifier: NotificationService()
+            notifier: NotificationService(),
+            location: CoreLocationContextProvider()
         ))
     }
 
@@ -35,7 +36,6 @@ struct VisionRecallApp: App {
                 .environment(glasses)
                 .task {
                     glasses.activate()
-                    await NotificationService().requestAuthorization()
                 }
                 .onOpenURL { url in
                     GlassesRuntime.handleCallback(url)
