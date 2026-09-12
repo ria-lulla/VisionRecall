@@ -21,6 +21,8 @@ packages:
   MetaWearablesDAT:
     url: https://github.com/facebook/meta-wearables-dat-ios
     exactVersion: "0.9.0"
+  VisionRecallMemory:
+    path: ../memory
 
 targets:
   VisionRecall:
@@ -40,6 +42,8 @@ targets:
         product: MWDATCore
       - package: MetaWearablesDAT
         product: MWDATCamera
+      - package: VisionRecallMemory
+        product: VisionRecallMemory
 
   VisionRecallTests:
     type: bundle.unit-test

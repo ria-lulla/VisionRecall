@@ -1,19 +1,33 @@
 import SwiftUI
+import VisionRecallMemory
 
-/// Home screen: connect to the glasses, capture a photo, and show the latest one.
+/// Home screen: connect to the glasses, capture a photo, and show the latest one
+/// plus the recent capture gallery.
 struct HomeView: View {
     @Environment(GlassesController.self) private var glasses
+    let captureStore: (any CaptureStoring)?
 
     var body: some View {
         NavigationStack {
-            VStack(spacing: 20) {
-                photo
-                statusRow
-                controls
-                diagnosticsSection
-                Spacer()
+            List {
+                Section {
+                    photo
+                        .listRowInsets(EdgeInsets())
+                        .listRowBackground(Color.clear)
+                }
+                Section {
+                    statusRow
+                    controls
+                }
+                if let captureStore {
+                    // Re-create after each capture so the gallery reloads.
+                    CaptureGalleryView(captureStore: captureStore)
+                        .id(glasses.lastCaptureDate)
+                }
+                Section("Diagnostics") {
+                    diagnosticsSection
+                }
             }
-            .padding()
             .navigationTitle("VisionRecall")
         }
     }

@@ -1,9 +1,12 @@
 import SwiftUI
+import VisionRecallMemory
 
 struct ContentView: View {
+    let captureStore: (any CaptureStoring)?
+
     var body: some View {
         TabView {
-            HomeView()
+            HomeView(captureStore: captureStore)
                 .tabItem { Label("Home", systemImage: "house") }
             RemindersView()
                 .tabItem { Label("Reminders", systemImage: "bell") }
@@ -16,6 +19,7 @@ struct ContentView: View {
 }
 
 #Preview {
-    ContentView()
+    ContentView(captureStore: nil)
+        .environment(GlassesController())
         .modelContainer(for: [MemoryKey.self, Reminder.self], inMemory: true)
 }

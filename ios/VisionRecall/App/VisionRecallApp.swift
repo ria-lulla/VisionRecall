@@ -1,11 +1,13 @@
 import SwiftUI
 import SwiftData
+import VisionRecallMemory
 
 @main
 struct VisionRecallApp: App {
     let container: ModelContainer
+    let captureStore: (any CaptureStoring)?
     @State private var engine: ContextEngine
-    @State private var glasses = GlassesController()
+    @State private var glasses: GlassesController
 
     init() {
         // Must run before anything touches Wearables.
@@ -19,6 +21,12 @@ struct VisionRecallApp: App {
         }
         self.container = container
 
+        // Recent captures live in a bounded, backup-excluded cache. If it can't be
+        // created the app still works, just without a persistent gallery.
+        let captureStore = try? CaptureStore()
+        self.captureStore = captureStore
+        _glasses = State(initialValue: GlassesController(captureStore: captureStore))
+
         let store = MemoryStore(context: container.mainContext)
         _engine = State(initialValue: ContextEngine(
             capture: MockCaptureService(),
@@ -31,7 +39,7 @@ struct VisionRecallApp: App {
 
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            ContentView(captureStore: captureStore)
                 .environment(engine)
                 .environment(glasses)
                 .task {

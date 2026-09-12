@@ -1,6 +1,7 @@
 import Foundation
 import UIKit
 import Observation
+import VisionRecallMemory
 
 /// Connection/capture state surfaced to the UI.
 enum GlassesStatus: Equatable {
@@ -79,9 +80,14 @@ final class GlassesController {
     private(set) var registrationState: GlassesRegistrationState = .unknown
 
     private let backend: GlassesBackend
+    private let captureStore: (any CaptureStoring)?
 
-    init(backend: GlassesBackend = GlassesBackendFactory.make()) {
+    init(
+        backend: GlassesBackend = GlassesBackendFactory.make(),
+        captureStore: (any CaptureStoring)? = nil
+    ) {
         self.backend = backend
+        self.captureStore = captureStore
     }
 
     /// Start watching registration state. Call once, after the SDK is configured.
@@ -137,6 +143,7 @@ final class GlassesController {
             latestPhoto = image
             lastCaptureDate = .now
             status = .ready
+            await persist(image)
         } catch {
             status = .failed(error.localizedDescription)
         }
@@ -145,6 +152,17 @@ final class GlassesController {
     func disconnect() {
         backend.disconnect()
         status = .disconnected
+    }
+
+    /// Save the capture to the bounded, backup-excluded on-device gallery. A storage
+    /// failure must not fail the capture the user just took.
+    private func persist(_ image: UIImage) async {
+        guard let captureStore, let data = image.jpegData(compressionQuality: 0.8) else { return }
+        do {
+            _ = try await captureStore.save(imageData: data, capturedAt: .now)
+        } catch {
+            GlassesLog.error("Failed to persist capture: \(error)")
+        }
     }
 
     func refreshDiagnostics() async {
