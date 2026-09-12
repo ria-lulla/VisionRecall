@@ -4,7 +4,7 @@ import XCTest
 
 final class VisionServiceImageTests: XCTestCase {
     func testBoxesAtFrontDoorFixtureDrivesDeterministicMockVisionPath() throws {
-        let image = try! fixtureImage(named: "boxes-at-front-door")
+        let image = try fixtureImage(named: "boxes-at-front-door")
         let labels = DefaultVisionService().labels(for: CameraFrame(
             image: image,
             simulatedLabels: ["door", "boxes"]
@@ -16,7 +16,10 @@ final class VisionServiceImageTests: XCTestCase {
     }
 
     private func fixtureImage(named name: String) throws -> UIImage {
+        // …/ios/VisionRecallTests/<file> → up three to the repository root, which is
+        // where assets/ lives.
         let repositoryRoot = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent()
             .deletingLastPathComponent()
             .deletingLastPathComponent()
         let url = repositoryRoot
