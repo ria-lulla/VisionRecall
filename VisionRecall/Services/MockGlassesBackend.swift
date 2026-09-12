@@ -23,6 +23,10 @@ final class MockGlassesBackend: GlassesBackend {
 
     func disconnect() {}
 
+    func diagnostics() async -> String {
+        "Simulator: MockGlassesBackend (no real SDK devices)."
+    }
+
     private static func placeholderPhoto(index: Int) -> UIImage {
         let size = CGSize(width: 720, height: 1280)
         let renderer = UIGraphicsImageRenderer(size: size)

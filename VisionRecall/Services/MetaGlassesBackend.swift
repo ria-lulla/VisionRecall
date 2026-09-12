@@ -96,6 +96,34 @@ final class MetaGlassesBackend: GlassesBackend {
         photoContinuation = nil
     }
 
+    /// Dumps what `devicesStream()` reports so we can tell "no device at all" apart from
+    /// "device known but not connected" (AutoDeviceSelector picks the first *connected*
+    /// device, so a registered-but-disconnected device is still not eligible).
+    func diagnostics() async -> String {
+        let task = Task { @MainActor () -> String in
+            var lastCount = -1
+            for await devices in Wearables.shared.devicesStream() {
+                lastCount = devices.count
+                if !devices.isEmpty {
+                    let dump = devices
+                        .map { String(describing: $0) }
+                        .joined(separator: "\n---\n")
+                    return "devicesStream: \(devices.count) device(s)\n\(dump)"
+                }
+            }
+            return lastCount < 0
+                ? "devicesStream: no emission before timeout"
+                : "devicesStream: emitted \(lastCount) device(s)"
+        }
+        let timeout = Task {
+            try? await Task.sleep(for: .seconds(8))
+            task.cancel()
+        }
+        let result = await task.value
+        timeout.cancel()
+        return result
+    }
+
     /// Resolves to `true` once at least one glasses device is available, or `false` if
     /// none appears within `timeout`. Races the devices stream against a timer.
     private static func waitForDevice(timeout: Duration) async -> Bool {

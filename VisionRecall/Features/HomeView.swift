@@ -10,6 +10,7 @@ struct HomeView: View {
                 photo
                 statusRow
                 controls
+                diagnosticsSection
                 Spacer()
             }
             .padding()
@@ -92,6 +93,26 @@ struct HomeView: View {
 
             Button("Disconnect", role: .destructive) {
                 glasses.disconnect()
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var diagnosticsSection: some View {
+        VStack(spacing: 6) {
+            Button("Check devices") {
+                Task { await glasses.refreshDiagnostics() }
+            }
+            .font(.caption)
+
+            if !glasses.diagnostics.isEmpty {
+                ScrollView(.vertical) {
+                    Text(glasses.diagnostics)
+                        .font(.system(.caption2, design: .monospaced))
+                        .textSelection(.enabled)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .frame(maxHeight: 140)
             }
         }
     }

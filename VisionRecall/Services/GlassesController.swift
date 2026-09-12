@@ -52,6 +52,8 @@ protocol GlassesBackend: AnyObject {
     func connect() async throws
     func capturePhoto() async throws -> UIImage
     func disconnect()
+    /// Human-readable dump of what the SDK currently reports, for troubleshooting.
+    func diagnostics() async -> String
 }
 
 /// Observable model the Home screen binds to. Holds status + the latest photo and
@@ -62,6 +64,7 @@ final class GlassesController {
     private(set) var status: GlassesStatus = .disconnected
     private(set) var latestPhoto: UIImage?
     private(set) var lastCaptureDate: Date?
+    private(set) var diagnostics: String = ""
 
     private let backend: GlassesBackend
 
@@ -108,6 +111,11 @@ final class GlassesController {
     func disconnect() {
         backend.disconnect()
         status = .disconnected
+    }
+
+    func refreshDiagnostics() async {
+        diagnostics = "Checking…"
+        diagnostics = await backend.diagnostics()
     }
 }
 
