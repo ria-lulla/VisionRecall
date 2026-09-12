@@ -2,38 +2,37 @@
 
 ## Project Structure & Module Organization
 
-This repository is currently an empty Git project. As implementation begins, keep the layout predictable:
+VisionRecall is an iOS-first hackathon prototype for context-aware reminders using Meta AI glasses. Keep the repository organized as follows:
 
-- `src/` for application or library source code.
-- `tests/` for automated tests, mirroring paths under `src/` where practical.
+- `VisionRecall/` for the SwiftUI app, feature modules, and local persistence.
+- `VisionRecallTests/` for unit tests and `VisionRecallUITests/` for UI tests.
 - `assets/` for static, non-code resources.
-- `docs/` for design notes and user-facing documentation.
+- `docs/` for architecture, setup, and product decisions.
 
-Do not commit generated build output, local environment files, credentials, or dependency caches. Add appropriate entries to `.gitignore` when tooling is introduced.
+Do not commit Xcode user data, DerivedData, signing files, API keys, captured frames, or user memory data.
 
 ## Build, Test, and Development Commands
 
-No build system or package manager is configured yet. When adding one, document the canonical commands here and in the project README. At a minimum, provide commands for:
+Open the future Xcode project with `open VisionRecall.xcodeproj`. Build and test from Xcode, or run:
 
-- installing dependencies;
-- running the application locally;
-- formatting and linting;
-- running the complete test suite.
+```sh
+xcodebuild -scheme VisionRecall -destination 'platform=iOS Simulator,name=iPhone 16' test
+```
 
-Prefer a small, repeatable command surface—for example, `npm test`, `npm run lint`, and `npm run build`, or equivalent commands for the selected language.
+The Meta Wearables Device Access Toolkit is a Swift Package Manager dependency. Use its Mock Device Kit while hardware is unavailable; test final camera flows with paired glasses in Developer Mode.
 
 ## Coding Style & Naming Conventions
 
-Follow the formatter and linter selected for the project; commit their configuration files. Use spaces rather than tabs unless the language ecosystem strongly requires otherwise. Name files and directories consistently with the primary language convention, and use descriptive names such as `user-profile.ts` or `user_profile.py` rather than abbreviations.
+Use Swift 6 conventions, SwiftUI, and four-space indentation. Name types in `UpperCamelCase`, members in `lowerCamelCase`, and files after their primary type (for example, `ReminderRule.swift`). Prefer small feature-focused types and protocol-backed services for hardware and persistence boundaries.
 
-Keep modules focused, avoid unrelated refactors in feature changes, and add comments only where intent is not clear from the code.
+Keep visual embeddings, captured context, and reminder state on-device. Explicitly opt out of SDK analytics and crash reporting unless the user has consented.
 
 ## Testing Guidelines
 
-Add tests with each behavior change. Place them in `tests/` or alongside source files according to the chosen framework, and use names that describe expected behavior (for example, `returns_error_for_missing_token`). Run the full test suite and formatter/linter before opening a pull request.
+Use XCTest. Name tests as behavior statements, such as `testReminderTriggersWhenDoorAndHomeSignalsMatch()`. Test rule evaluation and local storage independently of camera hardware; use mock camera inputs for integration tests. Run the complete suite before requesting review.
 
 ## Commit & Pull Request Guidelines
 
-There is no commit history yet. Use concise, imperative commit subjects, such as `Add session validation` or `Fix empty state rendering`. Keep commits focused and avoid committing secrets.
+Use concise, imperative subjects, such as `Add reminder rule evaluator`. Keep commits focused and avoid committing secrets.
 
-Pull requests should explain the change, note testing performed, link related issues when applicable, and include screenshots for visible UI changes. Flag configuration, migration, or security implications explicitly.
+Pull requests should describe the user-facing behavior, list tests run, link the issue when applicable, and include screenshots or a short recording for UI changes. Call out new permissions, data retention changes, and any non-local processing.
