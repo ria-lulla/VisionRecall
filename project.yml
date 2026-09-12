@@ -46,6 +46,10 @@ targets:
     platform: iOS
     sources:
       - path: VisionRecallTests
+        excludes:
+          - Resources
+      - path: VisionRecallTests/Resources
+        buildPhase: resources
     dependencies:
       - target: VisionRecall
     settings:
